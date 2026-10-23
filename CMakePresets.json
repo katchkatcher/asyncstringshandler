@@ -1,0 +1,45 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "default",
+      "displayName": "Default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "BOOL=ON",
+        "ASYNC_STRINGS_BUILD_EXAMPLES": "BOOL=ON",
+        "ASYNC_STRINGS_BUILD_TESTS": "BOOL=ON",
+        "ASYNC_STRINGS_BUILD_BENCHMARKS": "BOOL=ON"
+      }
+    },
+    {
+      "name": "clang-tidy",
+      "inherits": "default",
+      "displayName": "Clang-Tidy",
+      "cacheVariables": {
+        "ASYNC_STRINGS_ENABLE_CLANG_TIDY": "BOOL=ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default"
+    },
+    {
+      "name": "clang-tidy",
+      "configurePreset": "clang-tidy"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "default",
+      "configurePreset": "default",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

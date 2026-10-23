@@ -1,0 +1,11 @@
+Checks: >
+  -*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  readability-*,
+  modernize-use-override,
+  modernize-use-nullptr
+WarningsAsErrors: ''
+HeaderFilterRegex: '(^|/)(include|src|examples|tests|benchmarks)/'
+FormatStyle: file
