@@ -123,6 +123,38 @@ winget install ninja
 нескольких клиентских потоков, повторное получение результата и повторный
 вызов `Shutdown()`.
 
+## Continuous Integration
+
+GitHub Actions проверяет проект на каждом `push` и `pull_request`:
+
+- `ubuntu-latest`;
+- `macos-latest`;
+- `windows-latest`.
+
+Для каждой платформы CI выполняет:
+
+```text
+cmake --preset default
+cmake --build --preset default --parallel
+ctest --preset default --output-on-failure
+```
+
+После тестов запускаются пример с четырьмя клиентскими потоками и benchmark
+с 100 задачами. Отдельная job на Ubuntu собирает проект с `clang-tidy` и
+`cppcheck`, а затем также запускает CTest.
+
+Workflow находится в
+[.github/workflows/ci.yml](.github/workflows/ci.yml). Локальный результат,
+полностью совпадающий с основной CI-проверкой, можно получить командами
+сборки и тестирования из раздела выше. Для статического анализа используются
+команды:
+
+```bash
+cmake --preset clang-tidy
+cmake --build --preset clang-tidy --parallel
+ctest --test-dir build-clang-tidy --output-on-failure
+```
+
 ## Benchmark
 
 ```powershell
