@@ -1,13 +1,14 @@
 #include "async_strings_handler/AsyncStringsHandler.hpp"
 #include "utf8.h"
-#include <cctype>
+#include <algorithm>
 #include <condition_variable>
+#include <exception>
 #include <mutex>
 #include <queue>
 #include <stdexcept>
-#include <algorithm>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace AsyncStringsHandler {
@@ -25,6 +26,8 @@ class StringsHandler::Impl {
 
     std::queue<Task> pendingTasks;
     std::unordered_map<TaskId, std::string> completedById;
+    std::unordered_map<TaskId, std::exception_ptr> failedById;
+    std::unordered_set<TaskId> retrievedTaskIds;
 
     std::vector<std::thread> workers;
     TaskId nextTaskId = 1;
@@ -51,10 +54,12 @@ class StringsHandler::Impl {
             std::this_thread::sleep_for(std::chrono::milliseconds(operationDelayMs));
 
             try {
-                /* process the string */
                 task.input = utf8ToLower(task.input);
-            } catch (const std::exception& error) {
-                task.input = std::string("UTF-8 processing error: ") + error.what();
+            } catch (...) {
+                std::lock_guard<std::mutex> lock(mtx);
+                failedById[task.id] = std::current_exception();
+                resultsCv.notify_all();
+                continue;
             }
 
             {
@@ -94,7 +99,7 @@ class StringsHandler::Impl {
         return symbol;
     }
 
-    std::string static utf8ToLower(const std::string& text) {
+    static std::string utf8ToLower(const std::string& text) {
         if (!utf8::is_valid(text.begin(), text.end())) {
             throw std::invalid_argument("Input is not valid UTF-8");
         }
@@ -176,16 +181,32 @@ std::string StringsHandler::GetResult(TaskId taskId) {
         throw std::invalid_argument("Invalid Id Request");
     }
 
-    impl_->resultsCv.wait(lock, [this, taskId] { return impl_->completedById.count(taskId); });
+    impl_->resultsCv.wait(lock, [this, taskId] {
+        return impl_->completedById.count(taskId) ||
+               impl_->failedById.count(taskId) ||
+               impl_->retrievedTaskIds.count(taskId);
+    });
+
+    if (impl_->retrievedTaskIds.count(taskId) != 0U) {
+        throw std::logic_error("Result for this task has already been retrieved");
+    }
+
+    impl_->retrievedTaskIds.insert(taskId);
+
+    const auto failed = impl_->failedById.find(taskId);
+    if (failed != impl_->failedById.end()) {
+        const auto error = failed->second;
+        impl_->failedById.erase(failed);
+        std::rethrow_exception(error);
+    }
 
     auto node = impl_->completedById.extract(taskId);
 
     if (node.empty()) {
-        return {};
+        throw std::logic_error("Task completed without a result");
     }
 
-    /* node.mapped() returns T&, so RVO/NRVO doesn't apply. std::move prevents copying. */
-    return std::move(node.mapped());
+    return node.mapped();
 }
 
 } // namespace AsyncStringsHandler
