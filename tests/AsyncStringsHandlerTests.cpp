@@ -81,10 +81,47 @@ void TestConcurrentClients() {
     Require(failures == 0, "concurrent client result is incorrect");
 }
 
+void TestUtf8LowerCase() {
+    AsyncStringsHandler::StringsHandler handler(1);
+    const auto taskId = handler.SubmitTask("ПРИВЕТ");
+    const auto result = handler.GetResult(taskId);
+    Require(result == "привет", "utf-8 lowercase conversion is incorrect");
+}
+
+void TestInvalidUtf8DoesNotTerminate() {
+    AsyncStringsHandler::StringsHandler handler(1);
+    const std::string invalidUtf8 = std::string("\xFF\xFE", 2);
+    const auto taskId = handler.SubmitTask(invalidUtf8);
+    const auto result = handler.GetResult(taskId);
+    Require(result.find("UTF-8 processing error") != std::string::npos,
+            "invalid utf-8 should be reported without terminating the worker");
+}
+
 void TestRepeatedShutdown() {
     AsyncStringsHandler::StringsHandler handler(2);
     handler.Shutdown();
     handler.Shutdown();
+}
+
+void TestGetResultAfterShutdown() {
+    AsyncStringsHandler::StringsHandler handler(2);
+    const auto id = handler.SubmitTask("HELLO");
+    handler.Shutdown();
+    const auto result = handler.GetResult(id);
+    Require(result == "hello", "invalid result after shutdown");
+}
+
+void TestSubmitAfterShutdown() {
+    AsyncStringsHandler::StringsHandler handler(2);
+    handler.Shutdown();
+    try {
+        handler.SubmitTask("HELLO");
+        throw std::runtime_error("SubmitTask after shutdown did not throw");
+    } catch (const std::logic_error&) {
+        // Expected exception
+    } catch (...) {
+        throw std::runtime_error("SubmitTask after shutdown threw unexpected exception");
+    }
 }
 
 } // namespace
@@ -94,8 +131,12 @@ int main() {
         TestSingleTask();
         TestMultipleTasksById();
         TestEmptyString();
+        TestUtf8LowerCase();
+        TestInvalidUtf8DoesNotTerminate();
         TestConcurrentClients();
         TestRepeatedShutdown();
+        TestGetResultAfterShutdown();
+        TestSubmitAfterShutdown();
     } catch (const std::exception& error) {
         std::cerr << "Test failure: " << error.what() << '\n';
         return 1;
