@@ -92,9 +92,26 @@ void TestInvalidUtf8DoesNotTerminate() {
     AsyncStringsHandler::StringsHandler handler(1);
     const std::string invalidUtf8 = std::string("\xFF\xFE", 2);
     const auto taskId = handler.SubmitTask(invalidUtf8);
-    const auto result = handler.GetResult(taskId);
-    Require(result.find("UTF-8 processing error") != std::string::npos,
-            "invalid utf-8 should be reported without terminating the worker");
+    try {
+        static_cast<void>(handler.GetResult(taskId));
+        throw std::runtime_error("invalid utf-8 did not produce an error");
+    } catch (const std::invalid_argument&) {
+        // Expected error from the worker.
+    }
+}
+
+void TestRepeatedGetResult() {
+    AsyncStringsHandler::StringsHandler handler(1);
+    const auto taskId = handler.SubmitTask("HELLO");
+    Require(handler.GetResult(taskId) == "hello",
+            "first result retrieval is incorrect");
+
+    try {
+        static_cast<void>(handler.GetResult(taskId));
+        throw std::runtime_error("repeated GetResult did not throw");
+    } catch (const std::logic_error&) {
+        // Expected error for a consumed result.
+    }
 }
 
 void TestRepeatedShutdown() {
@@ -133,6 +150,7 @@ int main() {
         TestEmptyString();
         TestUtf8LowerCase();
         TestInvalidUtf8DoesNotTerminate();
+        TestRepeatedGetResult();
         TestConcurrentClients();
         TestRepeatedShutdown();
         TestGetResultAfterShutdown();
