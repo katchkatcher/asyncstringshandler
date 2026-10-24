@@ -28,7 +28,8 @@ function(enable_static_analysis target_name)
     if(ASYNC_STRINGS_ENABLE_CPPCHECK)
         find_program(CPPCHECK_EXECUTABLE NAMES cppcheck REQUIRED)
         set_target_properties(${target_name} PROPERTIES
-            CXX_CPPCHECK "${CPPCHECK_EXECUTABLE};--enable=warning,style,performance,portability"
+            CXX_CPPCHECK
+                "${CPPCHECK_EXECUTABLE};--enable=warning,style,performance,portability;--suppress=*:*/include/utf8/*;--suppress=*:*/include/utf8.h"
         )
     endif()
 endfunction()
