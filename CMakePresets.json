@@ -8,18 +8,20 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "BOOL=ON",
-        "ASYNC_STRINGS_BUILD_EXAMPLES": "BOOL=ON",
-        "ASYNC_STRINGS_BUILD_TESTS": "BOOL=ON",
-        "ASYNC_STRINGS_BUILD_BENCHMARKS": "BOOL=ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "ASYNC_STRINGS_BUILD_EXAMPLES": "ON",
+        "ASYNC_STRINGS_BUILD_TESTS": "ON",
+        "ASYNC_STRINGS_BUILD_BENCHMARKS": "ON"
       }
     },
     {
       "name": "clang-tidy",
       "inherits": "default",
       "displayName": "Clang-Tidy",
+      "binaryDir": "${sourceDir}/build-clang-tidy",
       "cacheVariables": {
-        "ASYNC_STRINGS_ENABLE_CLANG_TIDY": "BOOL=ON"
+        "ASYNC_STRINGS_ENABLE_CLANG_TIDY": "ON",
+        "ASYNC_STRINGS_ENABLE_CPPCHECK": "ON"
       }
     }
   ],

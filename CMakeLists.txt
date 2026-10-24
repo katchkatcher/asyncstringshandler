@@ -35,10 +35,13 @@ target_include_directories(AsyncStringsHandler
 )
 target_compile_definitions(AsyncStringsHandler PRIVATE ASYNC_STRINGS_HANDLER_EXPORTS)
 
-set_target_properties(AsyncStringsHandler PROPERTIES
-    CXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN ON
-)
+if(NOT WIN32)
+    # Im keeping method hiding for Linux/macOS.
+    set_target_properties(AsyncStringsHandler PROPERTIES
+        CXX_VISIBILITY_PRESET hidden
+        VISIBILITY_INLINES_HIDDEN ON
+    )
+endif()
 
 include(cmake/CompilerWarnings.cmake)
 set_project_warnings(AsyncStringsHandler)
