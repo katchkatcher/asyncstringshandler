@@ -34,7 +34,10 @@ void RunBenchmark(std::size_t workerCount, std::size_t taskCount) {
     }
 
     for (const auto taskId : taskIds) {
-        handler.GetResult(taskId);
+        const auto res = handler.GetResult(taskId);
+        if(res != "benchmark_task_" + std::to_string(taskId - 1)) {
+            throw std::runtime_error("Benchmark result is incorrect");
+        }
     }
 
     const auto elapsed =
@@ -61,7 +64,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Tasks: " << taskCount << '\n';
     std::cout << "Workers   |   Tasks       |     Time      |   Throughput\n";
 
-    for (const std::size_t workerCount : {1u, 2u, 4u}) {
+    for (const std::size_t workerCount : {1u, 2u, 4u, 8u, 16u, 32u, 64u}) {
         RunBenchmark(workerCount, taskCount);
     }
 
