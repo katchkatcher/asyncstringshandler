@@ -16,7 +16,7 @@
 
 namespace {
 
-constexpr std::size_t kTasksPerClient = 50;
+constexpr std::size_t kTasksPerClient = 5;
 
 std::size_t ReadClientCount(int argc, char* argv[]) {
     if (argc != 2) {
@@ -25,6 +25,7 @@ std::size_t ReadClientCount(int argc, char* argv[]) {
 
     const std::string argument = argv[1];
     std::size_t clientCount{};
+    /* transform char number to int, faster then stoi */
     const auto [end, error] = std::from_chars(
         argument.data(), argument.data() + argument.size(), clientCount);
     if (error != std::errc{} || end != argument.data() + argument.size() ||
